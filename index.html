@@ -92,8 +92,7 @@
         <center><button type="submit" class="btn btn-primary mt-3">บันทึกข้อมูล</button></center>
       </form> -->
 
-      <form id="attendance-form" class="mt-4">
-  <!-- NEW: class period -->
+<form id="attendance-form" class="mt-4">
   <div class="row mb-3">
     <label for="class-period" class="form-label">คาบเรียน</label>
     <select id="class-period" class="form-select" required>
@@ -116,7 +115,7 @@
         
   <div class="row mb-3">
     <label for="note" class="form-label">หมายเหตุ</label>
-    <textarea id="note" class="form-control" rows="2" placeholder="เช่น ห้องย้ายเรียน / นักเรียนไปแข่ง / แจ้งผู้ปกครองแล้ว"></textarea>
+    <textarea id="note" class="form-control" rows="2" placeholder="หมายเหตุอื่นๆ (ถ้ามี)"></textarea>
   </div>
 
   <center><button type="submit" class="btn btn-primary mt-3">บันทึกข้อมูล</button></center>
@@ -128,23 +127,19 @@
   </main>
 
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <!-- <script src="https://cdn.jsdelivr.net/gh/sanwithz/SetFooter/sanzwithz.js"></script> -->
 
   <script>
     let attendanceRecords = [];
     const studentListUrl = 'https://opensheet.elk.sh/1xs_oPauRT_rdXo3qcUVNAYZD_8etZ0mpnOBkC-M7MqU/Name';
 
     window.onload = function() {
-      // Initialize LIFF app with login required
       liff.init({ liffId: '2006600165-RXXYbwj7' })
         .then(() => {
           if (!liff.isLoggedIn()) {
             liff.login();
           } else {
             console.log('LIFF initialized');
-            // Fetch student list and generate form
             fetchStudentList();
-            // Add event listeners
             document.getElementById('attendance-form').addEventListener('submit', addAttendanceRecord);
             document.getElementById('send-summary').addEventListener('click', sendSummary);
             document.getElementById('check-all-present').addEventListener('click', () => checkAll('มา'));
@@ -202,11 +197,7 @@
         studentList.appendChild(studentRow);
       });
     }
-
-    // $(document).ready(function() {
-    //   setFooter();
-    // });
-
+    
     function checkAll(status) {
       const studentList = document.getElementById('student-list');
       const radios = studentList.querySelectorAll(`input[value="${status}"]`);
