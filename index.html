@@ -322,12 +322,16 @@ function sendSummary() {
             size: 'md',
             color: '#888888'
           },
+          {
+            type: 'separator',
+            margin: 'md'
+          },
           // NEW: show period if exists
           ...(period ? [{
             type: 'text',
             text: period,
             size: 'md',
-            color: '#444444',
+            color: '#555555',
             margin: 'sm'
           }] : []),
           // NEW: show note if exists
