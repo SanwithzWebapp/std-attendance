@@ -294,7 +294,7 @@ function sendSummary() {
   const now = new Date();
   const dateString = formatThaiDate(now);
 
-  // NEW: get period + note from first record
+  // take period + note from first record
   const period = attendanceRecords[0].period || '';
   const note   = attendanceRecords[0].note || '';
 
@@ -322,16 +322,11 @@ function sendSummary() {
             size: 'md',
             color: '#888888'
           },
-          {
-            type: 'separator',
-            margin: 'md'
-          },
-          // NEW: show period if exists
           ...(period ? [{
             type: 'text',
             text: period,
             size: 'md',
-            color: '#555555',
+            color: '#444444',
             margin: 'sm'
           }] : []),
           {
@@ -466,11 +461,11 @@ function sendSummary() {
               }
             ]
           },
-                          // NEW: show note if exists
+          // NOTE GOES HERE (below statistic)
           ...(note ? [{
             type: 'box',
             layout: 'vertical',
-            margin: 'sm',
+            margin: 'md',
             contents: [
               {
                 type: 'text',
@@ -480,10 +475,9 @@ function sendSummary() {
                 color: '#555555'
               }
             ]
-          }] : []),
+          }] : [])
         ]
       },
-
       styles: {
         footer: {
           separator: true
@@ -506,6 +500,7 @@ function sendSummary() {
       Swal.fire('Error', 'Error sharing attendance summary: ' + error, 'error');
     });
 }
+
 
   </script>
 
