@@ -334,21 +334,6 @@ function sendSummary() {
             color: '#555555',
             margin: 'sm'
           }] : []),
-          // NEW: show note if exists
-          ...(note ? [{
-            type: 'box',
-            layout: 'vertical',
-            margin: 'sm',
-            contents: [
-              {
-                type: 'text',
-                text: `หมายเหตุ: ${note}`,
-                wrap: true,
-                size: 'sm',
-                color: '#555555'
-              }
-            ]
-          }] : []),
           {
             type: 'separator',
             margin: 'md'
@@ -483,6 +468,21 @@ function sendSummary() {
           }
         ]
       },
+                // NEW: show note if exists
+          ...(note ? [{
+            type: 'box',
+            layout: 'vertical',
+            margin: 'sm',
+            contents: [
+              {
+                type: 'text',
+                text: `หมายเหตุ: ${note}`,
+                wrap: true,
+                size: 'sm',
+                color: '#555555'
+              }
+            ]
+          }] : []),
       styles: {
         footer: {
           separator: true
