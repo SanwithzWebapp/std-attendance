@@ -117,6 +117,17 @@
     <label for="note" class="form-label">หมายเหตุ</label>
     <textarea id="note" class="form-control" rows="2" placeholder="หมายเหตุอื่นๆ (ถ้ามี)"></textarea>
   </div>
+  
+<div class="row mb-3">
+  <label for="imageFile" class="form-label">อัปโหลดรูป (ไม่บังคับ)</label>
+  <input type="file" id="imageFile" class="form-control" accept="image/*">
+  <div id="upload-status" class="mt-2 text-primary" style="display:none;">กำลังอัปโหลด...</div>
+  <div id="upload-preview" class="mt-2" style="display:none;">
+    <img id="preview-image" src="" style="max-width: 150px; border:1px solid #ddd; border-radius:6px;">
+  </div>
+  <!-- hidden to store URL -->
+  <input type="hidden" id="imageUrl">
+</div>
 
   <center><button type="submit" class="btn btn-primary mt-3">บันทึกข้อมูล</button></center>
 </form>
@@ -131,6 +142,78 @@
   <script>
     let attendanceRecords = [];
     const studentListUrl = 'https://opensheet.elk.sh/1xs_oPauRT_rdXo3qcUVNAYZD_8etZ0mpnOBkC-M7MqU/Name';
+let uploadedImageUrl = ''; // keep it global so sendSummary can use it
+
+// Image upload functionality using ImgBB API
+async function uploadImageToImgBB(file) {
+  const API_KEY = '115aad0d48571f740cf04ae968f12c16';
+
+  const base64 = await new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64String = reader.result.split(',')[1];
+      resolve(base64String);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  const formData = new FormData();
+  formData.append('image', base64);
+
+  const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!response.ok) {
+    throw new Error('Upload failed: ' + response.status);
+  }
+
+  const result = await response.json();
+  if (result.success && result.data && result.data.url) {
+    return result.data.url;
+  } else {
+    throw new Error('Invalid response from ImgBB API');
+  }
+}
+
+// handle file input
+document.addEventListener('DOMContentLoaded', () => {
+  const fileInput = document.getElementById('imageFile');
+  if (!fileInput) return;
+
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const uploadStatus = document.getElementById('upload-status');
+    const uploadPreview = document.getElementById('upload-preview');
+    const previewImage = document.getElementById('preview-image');
+    const imageUrlInput = document.getElementById('imageUrl');
+
+    try {
+      uploadStatus.style.display = 'block';
+      uploadPreview.style.display = 'none';
+
+      const imageUrl = await uploadImageToImgBB(file);
+
+      uploadedImageUrl = imageUrl;           // <-- save for later
+      imageUrlInput.value = imageUrl;        // <-- in case you need it in form
+      previewImage.src = imageUrl;
+
+      uploadStatus.style.display = 'none';
+      uploadPreview.style.display = 'block';
+
+      Swal.fire('Success', 'Image uploaded to ImgBB!', 'success');
+    } catch (err) {
+      uploadStatus.style.display = 'none';
+      uploadPreview.style.display = 'none';
+      uploadedImageUrl = '';
+      Swal.fire('Error', err.message, 'error');
+      e.target.value = '';
+    }
+  });
+});
 
     window.onload = function() {
       liff.init({ liffId: '2006600165-RXXYbwj7' })
@@ -298,196 +381,155 @@ function sendSummary() {
   const period = attendanceRecords[0].period || '';
   const note   = attendanceRecords[0].note || '';
 
-  const flexMessage = {
-    type: 'flex',
-    altText: 'Attendance Summary',
-    contents: {
-      type: 'bubble',
-      size: 'giga',
-      body: {
-        type: 'box',
-        layout: 'vertical',
-        contents: [
-          {
-            type: 'text',
-            text: `สรุปการมาเรียน ม.5/13`,
-            weight: 'bold',
-            size: 'xl',
-            color: '#1DB446',
-            margin: 'md'
-          },
-          {
-            type: 'text',
-            text: `วันที่ ${dateString}`,
-            size: 'md',
-            color: '#888888'
-          },
-          ...(period ? [{
-            type: 'text',
-            text: period,
-            size: 'md',
-            color: '#444444',
-            margin: 'sm'
-          }] : []),
-          {
-            type: 'separator',
-            margin: 'md'
-          },
-          {
+const flexMessage = {
+  type: 'flex',
+  altText: 'Attendance Summary',
+  contents: {
+    type: 'bubble',
+    size: 'giga',
+    // add hero if image exists
+    ...(uploadedImageUrl ? {
+      hero: {
+        type: 'image',
+        url: uploadedImageUrl,
+        size: 'full',
+        aspectRatio: '20:13',
+        aspectMode: 'cover'
+      }
+    } : {}),
+    body: {
+      type: 'box',
+      layout: 'vertical',
+      contents: [
+        {
+          type: 'text',
+          text: `สรุปการมาเรียน ม.5/13`,
+          weight: 'bold',
+          size: 'xl',
+          color: '#1DB446',
+          margin: 'md'
+        },
+        {
+          type: 'text',
+          text: `วันที่ ${dateString}`,
+          size: 'md',
+          color: '#888888'
+        },
+        ...(period ? [{
+          type: 'text',
+          text: period,
+          size: 'md',
+          color: '#444444',
+          margin: 'sm'
+        }] : []),
+        {
+          type: 'separator',
+          margin: 'md'
+        },
+        {
+          type: 'box',
+          layout: 'vertical',
+          margin: 'md',
+          spacing: 'sm',
+          contents: attendanceRecords.map(record => ({
             type: 'box',
-            layout: 'vertical',
-            margin: 'md',
-            spacing: 'sm',
-            contents: attendanceRecords.map(record => ({
-              type: 'box',
-              layout: 'horizontal',
-              contents: [
-                {
-                  type: 'text',
-                  text: record.name,
-                  size: 'md',
-                  color: '#555555',
-                  flex: 4
-                },
-                {
-                  type: 'text',
-                  text: record.status,
-                  size: 'md',
-                  color: record.status === 'มา'
-                    ? '#1DB446'
-                    : (record.status === 'ขาด'
-                        ? '#FF5555'
-                        : (record.status === 'ลา'
-                            ? '#FFC107'
-                            : '#FF8800')),
-                  flex: 2,
-                  align: 'end'
-                }
-              ]
-            }))
-          },
-          {
-            type: 'separator',
-            margin: 'md'
-          },
-          {
-            type: 'box',
-            layout: 'vertical',
-            margin: 'md',
-            contents: [
-              {
-                type: 'box',
-                layout: 'horizontal',
-                contents: [
-                  {
-                    type: 'text',
-                    text: 'มาเรียน:',
-                    size: 'md',
-                    color: '#1DB446',
-                    flex: 3
-                  },
-                  {
-                    type: 'text',
-                    text: `${presentCount} คน (${presentPercentage}%)`,
-                    size: 'md',
-                    color: '#1DB446',
-                    flex: 2,
-                    align: 'end'
-                  }
-                ]
-              },
-              {
-                type: 'box',
-                layout: 'horizontal',
-                contents: [
-                  {
-                    type: 'text',
-                    text: 'ขาดเรียน:',
-                    size: 'md',
-                    color: '#FF5555',
-                    flex: 3
-                  },
-                  {
-                    type: 'text',
-                    text: `${absentCount} คน (${absentPercentage}%)`,
-                    size: 'md',
-                    color: '#FF5555',
-                    flex: 2,
-                    align: 'end'
-                  }
-                ]
-              },
-              {
-                type: 'box',
-                layout: 'horizontal',
-                contents: [
-                  {
-                    type: 'text',
-                    text: 'ลา:',
-                    size: 'md',
-                    color: '#FFC107',
-                    flex: 3
-                  },
-                  {
-                    type: 'text',
-                    text: `${leaveCount} คน (${leavePercentage}%)`,
-                    size: 'md',
-                    color: '#FFC107',
-                    flex: 2,
-                    align: 'end'
-                  }
-                ]
-              },
-              {
-                type: 'box',
-                layout: 'horizontal',
-                contents: [
-                  {
-                    type: 'text',
-                    text: 'สาย:',
-                    size: 'sm',
-                    color: '#FF8800',
-                    flex: 3
-                  },
-                  {
-                    type: 'text',
-                    text: `${lateCount} คน (${latePercentage}%)`,
-                    size: 'sm',
-                    color: '#FF8800',
-                    flex: 2,
-                    align: 'end'
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            type: 'separator',
-            margin: 'md'
-          },          
-          ...(note ? [{
-            type: 'box',
-            layout: 'vertical',
-            margin: 'md',
+            layout: 'horizontal',
             contents: [
               {
                 type: 'text',
-                text: `หมายเหตุ: ${note}`,
-                wrap: true,
-                size: 'sm',
-                color: '#555555'
+                text: record.name,
+                size: 'md',
+                color: '#555555',
+                flex: 4
+              },
+              {
+                type: 'text',
+                text: record.status,
+                size: 'md',
+                color: record.status === 'มา'
+                  ? '#1DB446'
+                  : (record.status === 'ขาด'
+                      ? '#FF5555'
+                      : (record.status === 'ลา'
+                          ? '#FFC107'
+                          : '#FF8800')),
+                flex: 2,
+                align: 'end'
               }
             ]
-          }] : [])
-        ]
-      },
-      styles: {
-        footer: {
-          separator: true
-        }
+          }))
+        },
+        {
+          type: 'separator',
+          margin: 'md'
+        },
+        {
+          type: 'box',
+          layout: 'vertical',
+          margin: 'md',
+          contents: [
+            {
+              type: 'box',
+              layout: 'horizontal',
+              contents: [
+                { type: 'text', text: 'มาเรียน:', size: 'md', color: '#1DB446', flex: 3 },
+                { type: 'text', text: `${presentCount} คน (${presentPercentage}%)`, size: 'md', color: '#1DB446', flex: 2, align: 'end' }
+              ]
+            },
+            {
+              type: 'box',
+              layout: 'horizontal',
+              contents: [
+                { type: 'text', text: 'ขาดเรียน:', size: 'md', color: '#FF5555', flex: 3 },
+                { type: 'text', text: `${absentCount} คน (${absentPercentage}%)`, size: 'md', color: '#FF5555', flex: 2, align: 'end' }
+              ]
+            },
+            {
+              type: 'box',
+              layout: 'horizontal',
+              contents: [
+                { type: 'text', text: 'ลา:', size: 'md', color: '#FFC107', flex: 3 },
+                { type: 'text', text: `${leaveCount} คน (${leavePercentage}%)`, size: 'md', color: '#FFC107', flex: 2, align: 'end' }
+              ]
+            },
+            {
+              type: 'box',
+              layout: 'horizontal',
+              contents: [
+                { type: 'text', text: 'สาย:', size: 'sm', color: '#FF8800', flex: 3 },
+                { type: 'text', text: `${lateCount} คน (${latePercentage}%)`, size: 'sm', color: '#FF8800', flex: 2, align: 'end' }
+              ]
+            }
+          ]
+        },
+        {
+          type: 'separator',
+          margin: 'md'
+        },
+        ...(note ? [{
+          type: 'box',
+          layout: 'vertical',
+          margin: 'md',
+          contents: [
+            {
+              type: 'text',
+              text: `หมายเหตุ: ${note}`,
+              wrap: true,
+              size: 'sm',
+              color: '#555555'
+            }
+          ]
+        }] : [])
+      ]
+    },
+    styles: {
+      footer: {
+        separator: true
       }
     }
-  };
+  }
+};
+
 
   liff.shareTargetPicker([flexMessage])
     .then((result) => {
