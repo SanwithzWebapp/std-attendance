@@ -465,10 +465,8 @@ function sendSummary() {
                 ]
               }
             ]
-          }
-        ]
-      },
-                // NEW: show note if exists
+          },
+                          // NEW: show note if exists
           ...(note ? [{
             type: 'box',
             layout: 'vertical',
@@ -483,6 +481,9 @@ function sendSummary() {
               }
             ]
           }] : []),
+        ]
+      },
+
       styles: {
         footer: {
           separator: true
