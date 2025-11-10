@@ -393,8 +393,12 @@ const flexMessage = {
         type: 'image',
         url: uploadedImageUrl,
         size: 'full',
-        aspectRatio: '20:13',
-        aspectMode: 'cover'
+        aspectRatio: '1:1',
+        aspectMode: 'cover',
+        action: {                 
+          type: 'uri',
+          uri: uploadedImageUrl
+        }
       }
     } : {}),
     body: {
