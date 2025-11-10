@@ -461,7 +461,10 @@ function sendSummary() {
               }
             ]
           },
-          // NOTE GOES HERE (below statistic)
+          {
+            type: 'separator',
+            margin: 'md'
+          },          
           ...(note ? [{
             type: 'box',
             layout: 'vertical',
